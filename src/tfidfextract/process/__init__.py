@@ -1,9 +1,11 @@
 import os
 from pathlib import Path
-from multiprocessing.pool import Pool
+from collections.abc import Iterable
 
 import polars as pl
 from polars import Expr
+from tqdm.contrib.concurrent import process_map
+
 from tfidfextract.process.keywords import KEYWORDS
 
 
@@ -32,8 +34,10 @@ def extract_idf_single(result: tuple[str, str, Path]) -> dict[str, int]:
     return dict_
 
 
-def extract_idf(results: list[tuple[str, str, Path]], pool: Pool) -> pl.DataFrame:
-    idf_counts = pool.map(extract_idf_single, results)
+def extract_idf(results: Iterable[tuple[str, str, Path]], year: str) -> pl.DataFrame:
+    idf_counts = process_map(
+        extract_idf_single, results, chunksize=32, desc=f"IDF_{year}"
+    )
     idf = pl.DataFrame(idf_counts).sum()
     return idf
 
