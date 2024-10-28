@@ -10,6 +10,8 @@ def load_data() -> dict:
         for file in files:
             stock_code, year, name = file.split("_")[:3]
             path = os.path.join(target_dir, file)
+            if not path.endswith(".txt"):
+                continue
             data[year] = data.get(year, []) + [(stock_code, name, path)]
 
     return data

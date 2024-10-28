@@ -3,6 +3,7 @@ from pathlib import Path
 from multiprocessing.pool import Pool
 
 import polars as pl
+from polars import Expr
 from tfidfextract.process.keywords import KEYWORDS
 
 
@@ -46,3 +47,16 @@ def process_single(pair: tuple[str, str, str]) -> tuple[str, str, Path]:
         tf.write_parquet(parquet_path)
 
     return (stock, name, Path(parquet_path))
+
+
+def tf_to_tfidf_sum(in_data: tuple[tuple[str, str, Path], list[Expr]]) -> dict:
+    result, expressions = in_data
+    stock, name, tf_df = result
+    tf_idf_df = pl.read_parquet(tf_df).with_columns(expressions)
+    info = next(tf_idf_df.iter_rows(named=True))
+    tf_idf_value = sum(info.values())
+    return {
+        "stock": stock,
+        "name": name,
+        "tf-idf": tf_idf_value,
+    }
